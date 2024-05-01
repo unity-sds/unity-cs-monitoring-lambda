@@ -1,8 +1,17 @@
 import boto3
 import sys
+import requests
+import datetime
+import json
 
 def get_ssm_parameters(parameter_names, shared=False):
-    """Retrieve multiple SSM parameters using Boto3, with optional account prefixing for shared parameters."""
+    """
+    Retrieve multiple SSM parameters using Boto3, with optional account prefixing for shared parameters.
+    
+    Parameters:
+    - parameter_names (list of str): Names of the parameters to retrieve.
+    - shared (bool): Indicates whether the parameters are shared across accounts.
+    """
     ssm = boto3.client('ssm')
 
     if shared:
@@ -37,6 +46,12 @@ def get_ssm_parameters(parameter_names, shared=False):
         return {}
 
 def fetch_health_status_ssm(shared_ssm):
+    """
+    Fetches health status related SSM parameters based on shared or local setting.
+
+    Parameters:
+    - shared_ssm (bool): If True, fetch shared parameters; otherwise, fetch local parameters.
+    """
     # Create an SSM client
     ssm_client = boto3.client('ssm')
     
@@ -75,6 +90,50 @@ def fetch_health_status_ssm(shared_ssm):
     return parameter_names
 
 
+def create_cognito_client(cognito_info):
+    """
+    Create a Cognito client and initiate authentication to get an access token.
+
+    Parameters:
+    - cognito_info (dict): Dictionary containing Cognito credentials and client ID.
+    """
+    client = boto3.client('cognito-idp')
+    response = client.initiate_auth(
+        AuthFlow='USER_PASSWORD_AUTH',
+        AuthParameters={
+            'USERNAME': cognito_info['/unity/shared-services/cognito/monitoring-username'],
+            'PASSWORD': cognito_info['/unity/shared-services/cognito/monitoring-password'],
+        },
+        ClientId=cognito_info['/unity/shared-services/dapa/client-id']
+    )
+    return response['AuthenticationResult']['AccessToken']
+
+def check_service_health(service_urls, access_token):
+    """
+    Check the health status of each service by making HTTP requests with the appropriate authorization headers.
+
+    Parameters:
+    - service_urls (dict): Dictionary mapping service names to their health check URLs.
+    - access_token (str): Access token for authentication.
+    """
+    health_status = {"services": []}
+    headers = {'Authorization': f'Bearer {access_token}'}
+
+    for service_name, url in service_urls.items():
+        try:
+            response = requests.get(url, headers=headers)
+            status = "HEALTHY" if response.status_code == 200 else "UNHEALTHY"
+        except Exception as e:
+            status = "UNHEALTHY"
+            print(f"Error accessing {url}: {e}", file=sys.stderr)
+
+        health_status["services"].append({
+            "service": service_name,
+            "landingPage": "N/A",
+            "healthChecks": [{"status": status, "date": datetime.datetime.now().isoformat()}]
+        })
+    return health_status
+
 def main():
     """Main function to control the flow of the program."""
     shared_parameters_cognito = [
@@ -88,9 +147,10 @@ def main():
 
     # Fetch shared parameters
     cognito_info = get_ssm_parameters(shared_parameters_cognito, shared=True)
+
     shared_services_health_ssm = fetch_health_status_ssm(True)
-    
     local_health_ssm = fetch_health_status_ssm(False)
+    token = create_cognito_client(cognito_info)
 
     print("COGNITO INFO")
     print(cognito_info)
@@ -115,9 +175,10 @@ def main():
     print(local_health_info)
     print()
 
-    # Fetch local parameters
-#    local_parameter_values = get_ssm_parameters(local_parameters)
 
+    health_status = check_service_health(shared_services_health_info, token)
+
+    print(json.dumps(health_status, indent=4))
 
 
 if __name__ == "__main__":
