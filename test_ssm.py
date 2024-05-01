@@ -36,32 +36,89 @@ def get_ssm_parameters(parameter_names, shared=False):
         print(f"Error retrieving parameters: {e}", file=sys.stderr)
         return {}
 
+def fetch_health_status_ssm(shared_ssm):
+    # Create an SSM client
+    ssm_client = boto3.client('ssm')
+    
+    # Determine the prefix based on the local_only flag
+    if shared_ssm:
+        prefix = '/unity/healthCheck/shared-services/'
+    else:
+        prefix = '/unity/healthCheck/'
+    
+    # Initialize the list to store specific parameter names
+    parameter_names = []
+    
+    # Using a paginator to handle potential large number of parameters
+    paginator = ssm_client.get_paginator('describe_parameters')
+    # Fetch parameters with a specific prefix
+    page_iterator = paginator.paginate(
+        ParameterFilters=[
+            {
+                'Key': 'Name',
+                'Option': 'BeginsWith',
+                'Values': [prefix]
+            }
+        ],
+        MaxResults=50,
+        Shared = shared_ssm
+    )
+
+    # Iterate through each page of results
+    for page in page_iterator:
+        for param in page.get('Parameters', []):
+            # Check if the parameter name starts with the specific prefix
+            if param['Name'].startswith(prefix):
+                # Add parameter name to the list
+                parameter_names.append(param['Name'])
+    
+    return parameter_names
+
+
 def main():
     """Main function to control the flow of the program."""
-    shared_parameters = [
+    shared_parameters_cognito = [
         '/unity/shared-services/cognito/monitoring-username',
         '/unity/shared-services/cognito/monitoring-password',
         '/unity/shared-services/dapa/client-id',
-        '/unity/healthCheck/shared-services/data-catalog/url'
 
     ]
-
     local_parameters = [
     ]
 
     # Fetch shared parameters
-    shared_parameter_values = get_ssm_parameters(shared_parameters, shared=True)
+    cognito_info = get_ssm_parameters(shared_parameters_cognito, shared=True)
+    shared_services_health_ssm = fetch_health_status_ssm(True)
+    
+    local_health_ssm = fetch_health_status_ssm(False)
+
+    print("COGNITO INFO")
+    print(cognito_info)
+    print()
+
+    print("SHARED SERVICED SSM ")
+    print(shared_services_health_ssm)
+    print()
+
+    print("LOCAL HEALTH SSM")
+    print(local_health_ssm)
+    print()
+    
+    shared_services_health_info = get_ssm_parameters(shared_services_health_ssm, shared=True)
+    local_health_info = get_ssm_parameters(local_health_ssm, shared=False)
+   
+    print("SHARED SERVICES INFO")
+    print(shared_services_health_info)
+    print()
+
+    print("LOCAL HEALTH INFO")
+    print(local_health_info)
+    print()
+
     # Fetch local parameters
 #    local_parameter_values = get_ssm_parameters(local_parameters)
 
-    # Combine results
-#    all_parameter_values = {**shared_parameter_values, **local_parameter_values}
 
-    if shared_parameter_values:
-        for name, value in shared_parameter_values.items():
-            print(f"Value of the parameter '{name}': {value}")
-    else:
-        print("Failed to retrieve the parameters.")
 
 if __name__ == "__main__":
     main()
