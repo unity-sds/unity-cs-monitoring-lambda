@@ -24,11 +24,13 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r lambda/requirements.txt
+          pip install -r lambda/requirements.txt -t lambda/package/
+
       - name: Package Lambda function
         run: |
-          cd lambda
-          zip -r ../unity-cs-monitoring-lambdazip lambda.py
+          cd lambda/package
+          cp ../lambda.py .
+          zip -r ../../unity-cs-monitoring-lambda.zip .
       - name: Upload packaged Lambda function
         uses: actions/upload-artifact@v2
         with:
