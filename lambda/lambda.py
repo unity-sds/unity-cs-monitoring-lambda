@@ -134,52 +134,41 @@ def check_service_health(service_urls, access_token):
         })
     return health_status
 
-def main():
-    """Main function to control the flow of the program."""
+def lambda_handler(event, context):
+    """AWS Lambda function handler with print statements for debugging."""
     shared_parameters_cognito = [
         '/unity/shared-services/cognito/monitoring-username',
         '/unity/shared-services/cognito/monitoring-password',
         '/unity/shared-services/dapa/client-id',
-
     ]
-    local_parameters = [
-    ]
-
+    
     # Fetch shared parameters
     cognito_info = get_ssm_parameters(shared_parameters_cognito, shared=True)
+    print("COGNITO INFO:", cognito_info)
 
     shared_services_health_ssm = fetch_health_status_ssm(True)
+    print("SHARED SERVICED SSM:", shared_services_health_ssm)
+
     local_health_ssm = fetch_health_status_ssm(False)
+    print("LOCAL HEALTH SSM:", local_health_ssm)
+
     token = create_cognito_client(cognito_info)
+    print("Access Token:", token)
 
-    print("COGNITO INFO")
-    print(cognito_info)
-    print()
-
-    print("SHARED SERVICED SSM ")
-    print(shared_services_health_ssm)
-    print()
-
-    print("LOCAL HEALTH SSM")
-    print(local_health_ssm)
-    print()
-    
     shared_services_health_info = get_ssm_parameters(shared_services_health_ssm, shared=True)
     local_health_info = get_ssm_parameters(local_health_ssm, shared=False)
-   
-    print("SHARED SERVICES INFO")
-    print(shared_services_health_info)
-    print()
 
-    print("LOCAL HEALTH INFO")
-    print(local_health_info)
-    print()
-
+    print("SHARED SERVICES INFO:", shared_services_health_info)
+    print("LOCAL HEALTH INFO:", local_health_info)
 
     health_status = check_service_health(shared_services_health_info, token)
+    print("Health Status:", health_status)
 
-    print(json.dumps(health_status, indent=4))
-
-
-if __name__ == "__main__":
-    main()
+    # Output the result as JSON
+    return {
+        'statusCode': 200,
+        'body': json.dumps(health_status, indent=4),
+        'headers': {
+            'Content-Type': 'application/json'
+        }
+    }
