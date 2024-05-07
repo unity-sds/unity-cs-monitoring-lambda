@@ -134,6 +134,30 @@ def check_service_health(service_urls, access_token):
         })
     return health_status
 
+def upload_file_to_s3(file_name, bucket_name, object_name=None):
+    """
+    Upload a file to an S3 bucket.
+
+    Parameters:
+    - file_name (str): File to upload.
+    - bucket_name (str): Bucket to upload to.
+    - object_name (str): S3 object name. If not specified, file_name is used.
+    """
+    # If S3 object_name was not specified, use file_name
+    if object_name is None:
+        object_name = file_name
+
+    # Create an S3 client
+    s3_client = boto3.client('s3')
+
+    try:
+        # Upload the file
+        response = s3_client.upload_file(file_name, bucket_name, object_name)
+        return True, "File uploaded successfully."
+    except Exception as e:
+        # The upload failed; return False and the error
+        return False, str(e)
+
 def lambda_handler(event, context):
     """AWS Lambda function handler with print statements for debugging."""
     shared_parameters_cognito = [
@@ -164,6 +188,18 @@ def lambda_handler(event, context):
     health_status = check_service_health(shared_services_health_info, token)
     print("Health Status:", health_status)
 
+    now = datetime.datetime.now()
+    filename = now.strftime("health_check_%Y-%m-%d_%H-%M-%S.json")
+
+    # Write the result to a JSON file
+    with open(filename, 'w') as file:
+        json.dump(health_status, file, indent=4)
+        
+    # Upload the file to S3
+    bucket_name = 'mgmt-13l4zrzw'  # Set your bucket name here
+    upload_message = upload_file_to_s3(filename, bucket_name)
+    print("Upload Status:", upload_message)
+
     # Output the result as JSON
     return {
         'statusCode': 200,
@@ -172,3 +208,16 @@ def lambda_handler(event, context):
             'Content-Type': 'application/json'
         }
     }
+
+# For local testing
+def main():
+    test_event = {
+    }
+    test_context = {}  # Empty context, not used in local testing
+
+    # Call the Lambda handler function
+    response = lambda_handler(test_event, test_context)
+    print("Lambda Response:", response)
+
+if __name__ == '__main__':
+     main()
