@@ -29,10 +29,26 @@ jobs:
       - name: Package Lambda function
         run: |
           cd lambda/package
-          cp ../lambda.py .
+          cp ../lambda/lambda_function.py .
           zip -r ../../unity-cs-monitoring-lambda.zip .
-      - name: Upload packaged Lambda function
-        uses: actions/upload-artifact@v2
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         with:
-          name: lambda-package
-          path: unity-cs-monitoring-lambda.zip
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.sha }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./unity-cs-monitoring-lambda.zip
+          asset_name: unity-cs-monitoring-lambda.zip
+          asset_content_type: application/zip
