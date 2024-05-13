@@ -32,14 +32,32 @@ jobs:
           cp ../lambda_function.py .
           zip -r ../../unity-cs-monitoring-lambda.zip .
 
+      - name: Get current version
+        id: get_version
+        run: echo "VERSION=$(cat version.txt)" >> $GITHUB_ENV
+
+      - name: Increment version
+        run: |
+          echo $((${{ env.VERSION }} + 1)) > version.txt
+          echo "NEW_VERSION=$(cat version.txt)" >> $GITHUB_ENV
+
+      - name: Update version file
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add version.txt
+          git commit -m "Increment version number to ${{ env.NEW_VERSION }}"
+          git push
+
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         with:
-          tag_name: ${{ github.ref_name }}
-          release_name: Release ${{ github.sha }}
+          tag_name: v${{ env.NEW_VERSION }}
+          release_name: Release v${{ env.NEW_VERSION }}
+          body: "This release contains the deployable ZIP file for Unity CS health status lambda"
           draft: false
           prerelease: false
 
