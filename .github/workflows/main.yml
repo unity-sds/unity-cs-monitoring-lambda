@@ -34,15 +34,20 @@ jobs:
 
       - name: Get current version
         id: get_version
-        run: echo "VERSION=$(cat version.txt)" >> $GITHUB_ENV
-
-      - name: Increment version
         run: |
-          echo $((${{ env.VERSION }} + 1)) > version.txt
-          echo "NEW_VERSION=$(cat version.txt)" >> $GITHUB_ENV
+          VERSION=$(cat version.txt)
+          echo "CURRENT_VERSION=$VERSION" >> $GITHUB_ENV
+          IFS='.' read -ra VER <<< "$VERSION"
+          MAJOR=${VER[0]}
+          MINOR=${VER[1]}
+          PATCH=${VER[2]}
+          NEW_PATCH=$(($PATCH + 1))
+          NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
-      - name: Update version file
+      - name: Increment version and commit
         run: |
+          echo ${{ env.NEW_VERSION }} > version.txt
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add version.txt
