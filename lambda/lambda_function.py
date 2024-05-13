@@ -25,6 +25,7 @@ def get_ssm_parameters(parameter_names, shared=False):
 
         # Prepend the account ID to each parameter name
         parameter_names = [
+            # TODO: Variables - region 
             f'arn:aws:ssm:us-west-2:{account_id}:parameter{name}' for name in parameter_names
         ]
 
@@ -60,6 +61,7 @@ def fetch_health_status_ssm(shared_ssm):
         prefix = '/unity/healthCheck/shared-services/'
     else:
         prefix = '/unity/healthCheck/'
+        # TODO: prefix = '/unity/PROJECT/VENUE/healthCheck/
     
     # Initialize the list to store specific parameter names
     parameter_names = []
@@ -185,7 +187,14 @@ def lambda_handler(event, context):
     print("SHARED SERVICES INFO:", shared_services_health_info)
     print("LOCAL HEALTH INFO:", local_health_info)
 
-    health_status = check_service_health(shared_services_health_info, token)
+    # Combine shared and local health information
+    combined_health_info = {**shared_services_health_info, **local_health_info}
+    print("COMBINED HEALTH INFO:", combined_health_info)
+
+    # Check the health status using the combined health information
+    health_status = check_service_health(combined_health_info, token)
+    
+    # health_status = check_service_health(shared_services_health_info, token)
     print("Health Status:", health_status)
 
     now = datetime.datetime.now()
@@ -219,5 +228,5 @@ def main():
     response = lambda_handler(test_event, test_context)
     print("Lambda Response:", response)
 
-if __name__ == '__main__':
-     main()
+#if __name__ == '__main__':
+    # main()
