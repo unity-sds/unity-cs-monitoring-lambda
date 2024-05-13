@@ -29,7 +29,7 @@ jobs:
       - name: Package Lambda function
         run: |
           cd lambda/package
-          cp ../lambda/lambda_function.py .
+          cp ../lambda_function.py .
           zip -r ../../unity-cs-monitoring-lambda.zip .
 
       - name: Create Release
