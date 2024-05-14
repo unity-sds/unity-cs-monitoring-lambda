@@ -1,4 +1,5 @@
 import boto3
+import botocore
 import sys
 import requests
 import datetime
@@ -61,7 +62,8 @@ def fetch_health_status_ssm(shared_ssm):
         prefix = '/unity/healthCheck/shared-services/'
     else:
         prefix = '/unity/healthCheck/'
-        # TODO: prefix = '/unity/PROJECT/VENUE/healthCheck/
+        # TODO:
+        # prefix = '/unity/PROJECT/VENUE/healthCheck/
     
     # Initialize the list to store specific parameter names
     parameter_names = []
@@ -162,6 +164,9 @@ def upload_file_to_s3(file_name, bucket_name, object_name=None):
 
 def lambda_handler(event, context):
     """AWS Lambda function handler with print statements for debugging."""
+    print(f"boto3 version: {boto3.__version__}")
+    print(f"botocore version: {botocore.__version__}")
+
     shared_parameters_cognito = [
         '/unity/shared-services/cognito/monitoring-username',
         '/unity/shared-services/cognito/monitoring-password',
@@ -205,7 +210,7 @@ def lambda_handler(event, context):
         json.dump(health_status, file, indent=4)
         
     # Upload the file to S3
-    bucket_name = 'mgmt-13l4zrzw'  # Set your bucket name here
+    bucket_name = 'mgmt-13l4zrzw'  
     upload_message = upload_file_to_s3(filename, bucket_name)
     print("Upload Status:", upload_message)
 
