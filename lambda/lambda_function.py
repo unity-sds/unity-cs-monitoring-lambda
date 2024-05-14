@@ -138,26 +138,31 @@ def check_service_health(service_urls, access_token):
         })
     return health_status
 
-def upload_file_to_s3(file_name, bucket_name, object_name=None):
+
+def upload_json_to_s3(json_data, bucket_name, object_name):
     """
-    Upload a file to an S3 bucket.
+    Upload JSON data to an S3 bucket.
 
     Parameters:
-    - file_name (str): File to upload.
+    - json_data (dict): JSON data to upload.
     - bucket_name (str): Bucket to upload to.
-    - object_name (str): S3 object name. If not specified, file_name is used.
+    - object_name (str): S3 object name.
     """
-    # If S3 object_name was not specified, use file_name
-    if object_name is None:
-        object_name = file_name
-
     # Create an S3 client
     s3_client = boto3.client('s3')
 
     try:
-        # Upload the file
-        response = s3_client.upload_file(file_name, bucket_name, object_name)
-        return True, "File uploaded successfully."
+        # Convert the JSON data to a string
+        json_string = json.dumps(json_data)
+
+        # Upload the JSON string to S3
+        response = s3_client.put_object(
+            Bucket=bucket_name,
+            Key=object_name,
+            Body=json_string,
+            ContentType='application/json'
+        )
+        return True, "JSON uploaded successfully."
     except Exception as e:
         # The upload failed; return False and the error
         return False, str(e)
@@ -205,14 +210,11 @@ def lambda_handler(event, context):
     now = datetime.datetime.now()
     filename = now.strftime("health_check_%Y-%m-%d_%H-%M-%S.json")
 
-    # Write the result to a JSON file
-    with open(filename, 'w') as file:
-        json.dump(health_status, file, indent=4)
-        
-    # Upload the file to S3
-    bucket_name = 'mgmt-13l4zrzw'  
-    upload_message = upload_file_to_s3(filename, bucket_name)
-    print("Upload Status:", upload_message)
+    # Upload the JSON data to S3
+    bucket_name = 'mgmt-13l4zrzw'
+    upload_status, upload_message = upload_json_to_s3(health_status, bucket_name, filename)
+    print("Upload Status:", upload_message) 
+
 
     # Output the result as JSON
     return {
