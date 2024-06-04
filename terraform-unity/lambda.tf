@@ -4,9 +4,59 @@ resource "null_resource" "download_lambda_zip" {
   }
 }
 
+resource "aws_iam_role" "lambda_execution_role" {
+  name = "unity-cs-monitoring-lambda-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = "sts:AssumeRole",
+        Effect = "Allow",
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_policy" "lambda_ssm_s3_policy" {
+  name        = "unity-cs-monitoring-lambda-policy"
+  description = "Policy to allow Lambda to read/write SSM and send objects to S3"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = [
+          "ssm:GetParameter",
+          "ssm:GetParameters",
+          "ssm:PutParameter"
+        ],
+        Effect   = "Allow",
+        Resource = "*"
+      },
+      {
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject"
+        ],
+        Effect   = "Allow",
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "attach_ssm_s3_policy" {
+  role       = aws_iam_role.lambda_execution_role.name
+  policy_arn = aws_iam_policy.lambda_ssm_s3_policy.arn
+}
+
 resource "aws_lambda_function" "unity_cs_monitoring_lambda" {
   function_name    = "unity_cs_monitoring_lambda"
-  role             = "arn:aws:iam::429178552491:role/iam_for_lambda"
+  role             = aws_iam_role.lambda_execution_role.arn
   handler          = "lambda_function.lambda_handler"
   runtime          = "python3.12"
   timeout          = 300  # Timeout set to 5 minutes (300 seconds)
@@ -15,9 +65,9 @@ resource "aws_lambda_function" "unity_cs_monitoring_lambda" {
 
   environment {
     variables = {
-      # Add any environment 
+      # Add any environment variables here
     }
   }
 
-  depends_on = [null_resource.download_lambda_zip]
+  depends_on = [null_resource.download_lambda_zip, aws_iam_role_policy_attachment.attach_ssm_s3_policy]
 }
