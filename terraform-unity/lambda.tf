@@ -71,3 +71,22 @@ resource "aws_lambda_function" "unity_cs_monitoring_lambda" {
 
   depends_on = [null_resource.download_lambda_zip, aws_iam_role_policy_attachment.attach_ssm_s3_policy]
 }
+
+resource "aws_cloudwatch_event_rule" "every_five_minutes" {
+  name                = "every_five_minutes"
+  schedule_expression = "rate(5 minutes)"
+}
+
+resource "aws_cloudwatch_event_target" "invoke_lambda" {
+  rule      = aws_cloudwatch_event_rule.every_five_minutes.name
+  target_id = "invoke_lambda_function"
+  arn       = aws_lambda_function.unity_cs_monitoring_lambda.arn
+}
+
+resource "aws_lambda_permission" "allow_eventbridge" {
+  statement_id  = "AllowExecutionFromEventBridge"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.unity_cs_monitoring_lambda.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.every_five_minutes.arn
+}
