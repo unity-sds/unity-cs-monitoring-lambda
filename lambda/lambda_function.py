@@ -153,8 +153,8 @@ def upload_json_to_s3(json_data, bucket_name, object_name):
     s3_client = boto3.client('s3')
 
     try:
-        # Convert the JSON data to a string
-        json_string = json.dumps(json_data)
+        # Convert the JSON data to a formatted string with indentation
+        json_string = json.dumps(json_data, indent=4)
 
         # Upload the JSON string to S3
         response = s3_client.put_object(
