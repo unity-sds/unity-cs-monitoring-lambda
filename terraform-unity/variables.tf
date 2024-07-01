@@ -1,9 +1,9 @@
-variable "parameter_name" {
-  description = "The name of the SSM parameter"
+variable "venue" {
+  description = "The venue for the deployment"
   type        = string
 }
 
-variable "parameter_value" {
-  description = "The value of the SSM parameter"
+variable "project" {
+  description = "The project name"
   type        = string
 }
