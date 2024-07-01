@@ -169,6 +169,11 @@ def upload_json_to_s3(json_data, bucket_name, object_name):
 
 def lambda_handler(event, context):
     """AWS Lambda function handler with print statements for debugging."""
+    project = os.environ.get('PROJECT')
+    venue = os.environ.get('VENUE')
+
+    bucket_name = f'unity-{project}-{venue}-bucket'
+    
     print(f"boto3 version: {boto3.__version__}")
     print(f"botocore version: {botocore.__version__}")
 
@@ -211,7 +216,6 @@ def lambda_handler(event, context):
     filename = now.strftime("health_check_%Y-%m-%d_%H-%M-%S.json")
 
     # Upload the JSON data to S3
-    bucket_name = 'mgmt-13l4zrzw'
     upload_status, upload_message = upload_json_to_s3(health_status, bucket_name, filename)
     print("Upload Status:", upload_message) 
 
