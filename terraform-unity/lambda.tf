@@ -37,7 +37,8 @@ resource "aws_iam_policy" "lambda_ssm_s3_policy" {
         Action = [
           "ssm:GetParameter",
           "ssm:GetParameters",
-          "ssm:PutParameter"
+          "ssm:PutParameter",
+          "ssm:DescribeParameters"
         ],
         Effect   = "Allow",
         Resource = "*"
