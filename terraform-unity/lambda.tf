@@ -1,6 +1,6 @@
 resource "null_resource" "download_lambda_zip" {
   provisioner "local-exec" {
-    command = "wget -O ${path.module}/unity-cs-monitoring-lambda.zip https://github.com/unity-sds/unity-cs-monitoring-lambda/releases/download/v1.0.22/unity-cs-monitoring-lambda.zip"
+    command = "wget -O ${path.module}/unity-cs-monitoring-lambda.zip https://github.com/unity-sds/unity-cs-monitoring-lambda/releases/download/v1.0.24/unity-cs-monitoring-lambda.zip"
   }
 }
 
