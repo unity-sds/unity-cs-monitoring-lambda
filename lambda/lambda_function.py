@@ -171,8 +171,11 @@ def lambda_handler(event, context):
     """AWS Lambda function handler with print statements for debugging."""
     project = os.environ.get('PROJECT')
     venue = os.environ.get('VENUE')
-
+    print("PROJECT:", project)
+    print("VENUE:", venue)
+    
     bucket_name = f'unity-{project}-{venue}-bucket'
+    print("BUCKET_NAME", bucket_name)
     
     print(f"boto3 version: {boto3.__version__}")
     print(f"botocore version: {botocore.__version__}")
