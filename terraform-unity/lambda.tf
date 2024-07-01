@@ -19,6 +19,7 @@ resource "aws_iam_role" "lambda_execution_role" {
       }
     ]
   })
+  permissions_boundary = data.aws_iam_policy.mcp_operator_policy.arn
 }
 
 resource "aws_iam_policy" "lambda_ssm_s3_policy" {
