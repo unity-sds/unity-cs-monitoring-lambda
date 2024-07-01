@@ -175,6 +175,7 @@ def lambda_handler(event, context):
     print("VENUE:", venue)
     
     bucket_name = f'unity-{project}-{venue}-bucket'
+    print("BUCKET_NAME")
     print("BUCKET_NAME", bucket_name)
     
     print(f"boto3 version: {boto3.__version__}")
