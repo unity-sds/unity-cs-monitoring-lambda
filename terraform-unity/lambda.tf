@@ -65,7 +65,8 @@ resource "aws_lambda_function" "unity_cs_monitoring_lambda" {
 
   environment {
     variables = {
-      # Add any environment variables here
+      VENUE   = var.venue
+      PROJECT = var.project
     }
   }
 
