@@ -4,6 +4,10 @@ resource "null_resource" "download_lambda_zip" {
   }
 }
 
+data "aws_iam_policy" "mcp_operator_policy" {
+  name = "mcp-tenantOperator-AMI-APIG"
+}
+
 resource "aws_iam_role" "lambda_execution_role" {
   name = "unity-cs-monitoring-lambda-role"
 
