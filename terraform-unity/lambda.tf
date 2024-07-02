@@ -9,7 +9,7 @@ data "aws_iam_policy" "mcp_operator_policy" {
 }
 
 resource "aws_iam_role" "lambda_execution_role" {
-  name = "unity-cs-monitoring-lambda-role"
+  name = "unity-${var.project}-${var.venue}-cs-monitoring-lambda-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -27,7 +27,7 @@ resource "aws_iam_role" "lambda_execution_role" {
 }
 
 resource "aws_iam_policy" "lambda_ssm_s3_policy" {
-  name        = "unity-cs-monitoring-lambda-policy"
+  name        = "unity-${var.project}-${var.venue}-cs-monitoring-lambda-policy"
   description = "Policy to allow Lambda to read/write SSM and send objects to S3"
 
   policy = jsonencode({
@@ -61,7 +61,7 @@ resource "aws_iam_role_policy_attachment" "attach_ssm_s3_policy" {
 }
 
 resource "aws_lambda_function" "unity_cs_monitoring_lambda" {
-  function_name    = "unity_cs_monitoring_lambda"
+  function_name    = "unity-${var.project}-${var.venue}-cs-monitoring-lambda"
   role             = aws_iam_role.lambda_execution_role.arn
   handler          = "lambda_function.lambda_handler"
   runtime          = "python3.12"
@@ -80,7 +80,7 @@ resource "aws_lambda_function" "unity_cs_monitoring_lambda" {
 }
 
 resource "aws_cloudwatch_event_rule" "every_five_minutes" {
-  name                = "every_five_minutes"
+  name                = "${var.project}-${var.venue}-every_five_minutes"
   schedule_expression = "rate(5 minutes)"
 }
 
