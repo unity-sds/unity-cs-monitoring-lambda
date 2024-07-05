@@ -10,7 +10,7 @@ variable "project" {
 
 variable "tags" {
   description = "A map of tags to assign to the resources."
-  type        = map(string
+  type        = map(string)
 }
 
 variable "installprefix" {
