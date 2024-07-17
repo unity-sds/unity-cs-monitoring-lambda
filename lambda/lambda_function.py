@@ -30,7 +30,6 @@ def get_ssm_parameter_value(parameter_names, shared=False):
 
         # Prepend the account ID to each parameter name
         parameter_names = [
-            # TODO: Variables - region
             f"arn:aws:ssm:us-west-2:{account_id}:parameter{name}"
             for name in parameter_names
         ]
@@ -118,31 +117,44 @@ def create_cognito_client(cognito_info):
     return response["AuthenticationResult"]["AccessToken"]
 
 
-def check_service_health(service_urls, access_token):
+def check_service_health(service_infos, access_token):
     """
     Check the health status of each service by making HTTP requests with the appropriate authorization headers.
 
     Parameters:
-    - service_urls (dict): Dictionary mapping service names to their health check URLs.
+    - service_infos (dict): Dictionary mapping service names to their details.
     - access_token (str): Access token for authentication.
     """
     health_status = {"services": []}
     headers = {"Authorization": f"Bearer {access_token}"}
 
-    for service_name, url in service_urls.items():
+    for ssm_key, service_info in service_infos.items():
+        service_info_dict = json.loads(service_info)
+        service_name = service_info_dict.get("componentName")
+        health_check_url = service_info_dict.get("healthCheckUrl")
+        landing_page_url = service_info_dict.get("landingPageUrl")
+
         try:
-            response = requests.get(url, headers=headers)
+            response = requests.get(health_check_url, headers=headers)
             status = "HEALTHY" if response.status_code == 200 else "UNHEALTHY"
+            http_response_code = response.status_code
         except Exception as e:
             status = "UNHEALTHY"
-            print(f"Error accessing {url}: {e}", file=sys.stderr)
+            http_response_code = "N/A"
+            print(f"Error accessing {health_check_url}: {e}", file=sys.stderr)
 
         health_status["services"].append(
             {
-                "service": service_name,
-                "landingPage": "N/A",
+                "componentName": service_name,
+                "ssmKey": ssm_key,
+                "healthCheckUrl": health_check_url,
+                "landingPageUrl": landing_page_url,
                 "healthChecks": [
-                    {"status": status, "date": datetime.datetime.now().isoformat()}
+                    {
+                        "status": status,
+                        "httpResponseCode": str(http_response_code),
+                        "date": datetime.datetime.now().isoformat(),
+                    }
                 ],
             }
         )
@@ -227,7 +239,6 @@ def lambda_handler(event, context):
     # Check the health status using the combined health information
     health_status = check_service_health(combined_health_info, token)
 
-    # health_status = check_service_health(shared_services_health_info, token)
     print("Health Status:", health_status)
 
     now = datetime.datetime.now()
@@ -256,6 +267,6 @@ def main():
     response = lambda_handler(test_event, test_context)
     print("Lambda Response:", response)
 
-
-# if __name__ == '__main__':
-# main()
+    # if __name__ == '__main__':
+    #    main()
+    #
