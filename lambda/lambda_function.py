@@ -267,6 +267,5 @@ def main():
     response = lambda_handler(test_event, test_context)
     print("Lambda Response:", response)
 
-    # if __name__ == '__main__':
-    #    main()
-    #
+    # if __name__ == "__main__":
+    #     main()
