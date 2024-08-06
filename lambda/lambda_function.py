@@ -177,13 +177,22 @@ def upload_json_to_s3(json_data, bucket_name, object_name):
         # Convert the JSON data to a formatted string with indentation
         json_string = json.dumps(json_data, indent=4)
 
-        # Upload the JSON string to S3
-        response = s3_client.put_object(
+        # Upload the JSON 
+        s3_client.put_object(
             Bucket=bucket_name,
             Key=object_name,
             Body=json_string,
             ContentType="application/json",
         )
+
+        # Also upload the JSON string as the latest file
+        s3_client.put_object(
+            Bucket=bucket_name,
+            Key="health_check_latest.json",
+            Body=json_string,
+            ContentType="application/json",
+        )
+        
         return True, "JSON uploaded successfully."
     except Exception as e:
         # The upload failed; return False and the error
