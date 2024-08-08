@@ -16,6 +16,7 @@ def get_ssm_parameter_value(parameter_names, shared=False):
     - shared (bool): Indicates whether the parameters are shared across accounts.
     """
     ssm = boto3.client("ssm")
+    max_params_per_call = 10
 
     if shared:
         # Get the account ID parameter
@@ -34,23 +35,28 @@ def get_ssm_parameter_value(parameter_names, shared=False):
             for name in parameter_names
         ]
 
-    try:
-        # Get multiple parameters
-        response = ssm.get_parameters(Names=parameter_names, WithDecryption=True)
+    all_parameters = {}
 
-        if response["InvalidParameters"]:
-            print(
-                f"Invalid parameters: {response['InvalidParameters']}", file=sys.stderr
+    for i in range(0, len(parameter_names), max_params_per_call):
+        chunk = parameter_names[i : i + max_params_per_call]
+        try:
+            response = ssm.get_parameters(Names=chunk, WithDecryption=True)
+
+            if response["InvalidParameters"]:
+                print(
+                    f"Invalid parameters: {response['InvalidParameters']}",
+                    file=sys.stderr,
+                )
+
+            # Extract parameter values into a dictionary
+            all_parameters.update(
+                {param["Name"]: param["Value"] for param in response["Parameters"]}
             )
+        except Exception as e:
+            print(f"Error retrieving parameters: {e}", file=sys.stderr)
+            continue
 
-        # Extract parameter values into a dictionary
-        parameter_values = {
-            param["Name"]: param["Value"] for param in response["Parameters"]
-        }
-        return parameter_values
-    except Exception as e:
-        print(f"Error retrieving parameters: {e}", file=sys.stderr)
-        return {}
+    return all_parameters
 
 
 def fetch_health_status_ssm_values(shared_ssm, project, venue):
