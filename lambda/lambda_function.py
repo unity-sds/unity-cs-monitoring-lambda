@@ -198,15 +198,12 @@ def upload_json_to_s3(json_data, bucket_name, object_name):
 
 def lambda_handler(event, context):
     """AWS Lambda function handler with print statements for debugging."""
-    # project = os.environ.get("PROJECT")
-    # venue = os.environ.get("VENUE")
-    project = "unity"
-    venue = "dev"
+    project = os.environ.get("PROJECT")
+    venue = os.environ.get("VENUE")
     print("PROJECT:", project)
     print("VENUE:", venue)
 
-    # bucket_name = f"unity-{project}-{venue}-bucket"
-    bucket_name = f"unity-unity-dev-bucket"
+    bucket_name = f"unity-{project}-{venue}-bucket"
     print("BUCKET_NAME")
     print("BUCKET_NAME", bucket_name)
 
@@ -276,6 +273,5 @@ def main():
     response = lambda_handler(test_event, test_context)
     print("Lambda Response:", response)
 
-
-if __name__ == "__main__":
-    main()
+    # if __name__ == "__main__":
+    #     main()
