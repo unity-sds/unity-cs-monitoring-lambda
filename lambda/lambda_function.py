@@ -16,6 +16,7 @@ def get_ssm_parameter_value(parameter_names, shared=False):
     - shared (bool): Indicates whether the parameters are shared across accounts.
     """
     ssm = boto3.client("ssm")
+    max_params_per_call = 10
 
     if shared:
         # Get the account ID parameter
@@ -34,23 +35,28 @@ def get_ssm_parameter_value(parameter_names, shared=False):
             for name in parameter_names
         ]
 
-    try:
-        # Get multiple parameters
-        response = ssm.get_parameters(Names=parameter_names, WithDecryption=True)
+    all_parameters = {}
 
-        if response["InvalidParameters"]:
-            print(
-                f"Invalid parameters: {response['InvalidParameters']}", file=sys.stderr
+    for i in range(0, len(parameter_names), max_params_per_call):
+        chunk = parameter_names[i : i + max_params_per_call]
+        try:
+            response = ssm.get_parameters(Names=chunk, WithDecryption=True)
+
+            if response["InvalidParameters"]:
+                print(
+                    f"Invalid parameters: {response['InvalidParameters']}",
+                    file=sys.stderr,
+                )
+
+            # Extract parameter values into a dictionary
+            all_parameters.update(
+                {param["Name"]: param["Value"] for param in response["Parameters"]}
             )
+        except Exception as e:
+            print(f"Error retrieving parameters: {e}", file=sys.stderr)
+            continue
 
-        # Extract parameter values into a dictionary
-        parameter_values = {
-            param["Name"]: param["Value"] for param in response["Parameters"]
-        }
-        return parameter_values
-    except Exception as e:
-        print(f"Error retrieving parameters: {e}", file=sys.stderr)
-        return {}
+    return all_parameters
 
 
 def fetch_health_status_ssm_values(shared_ssm, project, venue):
@@ -192,12 +198,15 @@ def upload_json_to_s3(json_data, bucket_name, object_name):
 
 def lambda_handler(event, context):
     """AWS Lambda function handler with print statements for debugging."""
-    project = os.environ.get("PROJECT")
-    venue = os.environ.get("VENUE")
+    # project = os.environ.get("PROJECT")
+    # venue = os.environ.get("VENUE")
+    project = "unity"
+    venue = "dev"
     print("PROJECT:", project)
     print("VENUE:", venue)
 
-    bucket_name = f"unity-{project}-{venue}-bucket"
+    # bucket_name = f"unity-{project}-{venue}-bucket"
+    bucket_name = f"unity-unity-dev-bucket"
     print("BUCKET_NAME")
     print("BUCKET_NAME", bucket_name)
 
@@ -267,5 +276,6 @@ def main():
     response = lambda_handler(test_event, test_context)
     print("Lambda Response:", response)
 
-    # if __name__ == "__main__":
-    #     main()
+
+if __name__ == "__main__":
+    main()
