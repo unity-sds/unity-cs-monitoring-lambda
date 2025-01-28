@@ -139,6 +139,9 @@ def check_service_health(service_infos, access_token):
         service_name = service_info_dict.get("componentName")
         health_check_url = service_info_dict.get("healthCheckUrl")
         landing_page_url = service_info_dict.get("landingPageUrl")
+        # Get new fields with default value of "EMPTY" if not found
+        component_category = service_info_dict.get("componentCategory", "EMPTY")
+        component_type = service_info_dict.get("componentType", "EMPTY")
 
         try:
             response = requests.get(health_check_url, headers=headers)
@@ -152,6 +155,8 @@ def check_service_health(service_infos, access_token):
         health_status["services"].append(
             {
                 "componentName": service_name,
+                "componentCategory": component_category,
+                "componentType": component_type,
                 "ssmKey": ssm_key,
                 "healthCheckUrl": health_check_url,
                 "landingPageUrl": landing_page_url,
