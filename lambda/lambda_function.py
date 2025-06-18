@@ -143,6 +143,7 @@ def check_service_health(service_infos, access_token):
         component_category = service_info_dict.get("componentCategory", "general")
         component_type = service_info_dict.get("componentType", "unknown")
         description = service_info_dict.get("description", "")
+        is_portal_integrated = service_info_dict.get("isPortalIntegrated", False)
 
         try:
             response = requests.get(health_check_url, headers=headers)
@@ -161,6 +162,7 @@ def check_service_health(service_infos, access_token):
                 "description": description,
                 "ssmKey": ssm_key,
                 "healthCheckUrl": health_check_url,
+                "isPortalIntegrated": is_portal_integrated,
                 "landingPageUrl": landing_page_url,
                 "healthChecks": [
                     {
